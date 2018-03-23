@@ -36,6 +36,7 @@ abstract class Lexer {
 
     /**
      * @return Token
+     * @throws LexerException
      */
     abstract public function nextToken();
 }

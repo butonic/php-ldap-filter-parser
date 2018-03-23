@@ -3,6 +3,7 @@
 namespace Butonic\Syntax\LDAP;
 
 use Butonic\Syntax\Lexer;
+use Butonic\Syntax\LexerException;
 use Butonic\Syntax\Token;
 
 /**
@@ -138,6 +139,10 @@ class FilterLexer extends Lexer implements Rfc4512 {
             || (($char >= 'A') && ($char <= 'Z'));
     }
 
+    /**
+     * @return Token
+     * @throws LexerException
+     */
     public function nextToken() {
         while ( $this->c !== self::EOF ) {
             switch ( $this->c ) {
@@ -198,7 +203,7 @@ class FilterLexer extends Lexer implements Rfc4512 {
                         $this->consume();
                         return $token;
                     }
-                    throw new \Exception('invalid character: ' . $this->c);
+                    throw new LexerException("invalid character: $this->c");
             }
         }
         return new Token(self::EOF_TYPE,'<EOF>');

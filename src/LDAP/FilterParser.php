@@ -3,6 +3,8 @@
 namespace Butonic\Syntax\LDAP;
 
 use Butonic\Syntax\Parser;
+use Butonic\Syntax\ParserException;
+use Butonic\Syntax\SyntaxException;
 
 /**
  * Class FilterParser
@@ -12,8 +14,8 @@ use Butonic\Syntax\Parser;
 class FilterParser extends Parser {
 
     /**
-     * LPAREN filtercomp RPAREN
-     * @throws \Exception
+     * filter = LPAREN filtercomp RPAREN
+     * @throws SyntaxException
      */
     public function filter() {
         $this->match(FilterLexer::LPAREN);
@@ -22,8 +24,8 @@ class FilterParser extends Parser {
     }
 
     /**
-     * and / or / not / item
-     * @throws \Exception
+     * filtercomp = and / or / not / item
+     * @throws SyntaxException
      */
     public function filtercomp() {
         switch ($this->lookahead->type) {
@@ -42,8 +44,8 @@ class FilterParser extends Parser {
     }
 
     /**
-     * AMPERSAND filterlist
-     * @throws \Exception
+     * and = AMPERSAND filterlist
+     * @throws SyntaxException
      */
     public function andFilter() {
         $this->match(FilterLexer::AMPERSAND);
@@ -51,8 +53,8 @@ class FilterParser extends Parser {
     }
 
     /**
-     * VERTBAR filterlist
-     * @throws \Exception
+     * or = VERTBAR filterlist
+     * @throws SyntaxException
      */
     public function orFilter() {
         $this->match(FilterLexer::VERTBAR);
@@ -60,8 +62,8 @@ class FilterParser extends Parser {
     }
 
     /**
-     * EXCLAMATION filterlist
-     * @throws \Exception
+     * not = EXCLAMATION filterlist
+     * @throws SyntaxException
      */
     public function not() {
         $this->match(FilterLexer::EXCLAMATION);
@@ -69,8 +71,8 @@ class FilterParser extends Parser {
     }
 
     /**
-     * simple / present / substring / extensible
-     * @throws \Exception
+     * item = simple / present / substring / extensible
+     * @throws SyntaxException
      */
     public function item() {
         if ($this->lookahead->type === FilterLexer::ALPHA
@@ -84,20 +86,20 @@ class FilterParser extends Parser {
     }
 
     /**
-     * simpleTail / presentTail / substringTail / extensible1Tail
+     * itemTail         = simpleTail / presentTail / substringTail / extensible1Tail
      *
-     * simpleTail = filtertype assertionvalue
-     *     filtertype = equal / approx / greaterorequal / lessorequal
+     * simpleTail       = filtertype assertionvalue
+     *     filtertype   = equal / approx / greaterorequal / lessorequal
      *
-     * presentTail = EQUALS ASTERISK
+     * presentTail      = EQUALS ASTERISK
      *
-     * substringTail = EQUALS [initial] any [final]
+     * substringTail    = EQUALS [initial] any [final]
      *
-     * extensible1Tail     = [dnattrs] [matchingrule] COLON EQUALS assertionvalue
-     *     dnattrs        = COLON "dn"
-     *     matchingrule   = COLON oid
+     * extensible1Tail  = [dnattrs] [matchingrule] COLON EQUALS assertionvalue
+     *     dnattrs      = COLON "dn"
+     *     matchingrule = COLON oid
      *
-     * @throws \Exception
+     * @throws SyntaxException
      */
     public function itemTail() {
         switch ($this->lookahead->type) {
@@ -111,12 +113,6 @@ class FilterParser extends Parser {
                 return;
             case (FilterLexer::EQUALS):
                 $this->consume();
-                /*
-                if ($this->lookahead->type === FilterLexer::ASTERISK) {
-                    $this->consume(); // = present matched
-                    return;
-                }
-                */
                 // simpleTail2 = assertionvalue === initial // can be empty
                 $this->assertionvalue(); // = simple matched
                 // substringTail2 =  [initial] any [final]
@@ -126,12 +122,13 @@ class FilterParser extends Parser {
                 }
                 return;
             default:
-                throw new \Exception("Expecting filtertype : Found $this->lookahead");
+                throw new ParserException("Expecting filtertype, found $this->lookahead");
         }
     }
+
     /**
      * simpleTail = filtertype assertionvalue
-     * @throws \Exception
+     * @throws SyntaxException
      */
     public function simpleTail() {
         $this->filtertype();
@@ -139,10 +136,10 @@ class FilterParser extends Parser {
     }
 
     /**
-     * extensible1Tail     = [dnattrs] [matchingrule] COLON EQUALS assertionvalue
-     * dnattrs        = COLON "dn"
-     * matchingrule   = COLON oid
-     * @throws \Exception
+     * extensible1Tail = [dnattrs] [matchingrule] COLON EQUALS assertionvalue
+     * dnattrs         = COLON "dn"
+     * matchingrule    = COLON oid
+     * @throws SyntaxException
      */
     public function extensible1Tail() {
         $this->match(FilterLexer::COLON);
@@ -153,7 +150,7 @@ class FilterParser extends Parser {
                 $this->consume();
                 $this->match(FilterLexer::COLON); // must end in [matchingrule] COLON EQUALS assertionvalue
             } else {
-                throw new \Exception("Expecting dnattrs : Found $this->lookahead");
+                throw new ParserException("Expecting dnattrs, found $this->lookahead");
             }
         }
         // matchingrule optional
@@ -166,11 +163,12 @@ class FilterParser extends Parser {
         $this->match(FilterLexer::EQUALS);
         $this->assertionvalue();
     }
+
     /**
-        extensible2     = [dnattrs] matchingrule COLON EQUALS assertionvalue
-     * dnattrs        = COLON "dn"
-     * matchingrule   = COLON oid
-     * @throws \Exception
+     * extensible2  = [dnattrs] matchingrule COLON EQUALS assertionvalue
+     * dnattrs      = COLON "dn"
+     * matchingrule = COLON oid
+     * @throws SyntaxException
      */
     public function extensible2() {
         $this->match(FilterLexer::COLON);
@@ -181,7 +179,7 @@ class FilterParser extends Parser {
                 $this->consume();
                 $this->match(FilterLexer::COLON); // must end in matchingrule COLON EQUALS assertionvalue
             } else {
-                throw new \Exception("Expecting dnattrs : Found $this->lookahead");
+                throw new ParserException("Expecting dnattrs, found $this->lookahead");
             }
         }
         // matchingrule NOT optional
@@ -195,7 +193,7 @@ class FilterParser extends Parser {
 
     /**
      * filtertype = equal / approx / greaterorequal / lessorequal
-     * @throws \Exception
+     * @throws SyntaxException
      */
     public function filtertype() {
         switch ($this->lookahead->type) {
@@ -212,13 +210,13 @@ class FilterParser extends Parser {
                 $this->lessorequal();
                 return;
             default:
-                throw new \Exception("Expecting filtertype : Found $this->lookahead");
+                throw new ParserException("Expecting filtertype, found $this->lookahead");
         }
     }
 
     /**
-     * TILDE EQUALS
-     * @throws \Exception
+     * approx = TILDE EQUALS
+     * @throws SyntaxException
      */
     public function approx() {
         $this->match(FilterLexer::TILDE);
@@ -226,8 +224,8 @@ class FilterParser extends Parser {
     }
 
     /**
-     * RANGLE EQUALS
-     * @throws \Exception
+     * greaterorequal = RANGLE EQUALS
+     * @throws SyntaxException
      */
     public function greaterorequal() {
         $this->match(FilterLexer::RANGLE);
@@ -235,8 +233,8 @@ class FilterParser extends Parser {
     }
 
     /**
-     * LANGLE EQUALS
-     * @throws \Exception
+     * lessorequal = LANGLE EQUALS
+     * @throws SyntaxException
      */
     public function lessorequal() {
         $this->match(FilterLexer::LANGLE);
@@ -244,8 +242,8 @@ class FilterParser extends Parser {
     }
 
     /**
-     * 1*filter
-     * @throws \Exception
+     * filterlist = 1*filter
+     * @throws SyntaxException
      */
     public function filterlist() {
         do {
@@ -254,8 +252,8 @@ class FilterParser extends Parser {
     }
 
     /**
-     * number  = DIGIT / ( LDIGIT 1*DIGIT )
-     * @throws \Exception
+     * number = DIGIT / ( LDIGIT 1*DIGIT )
+     * @throws SyntaxException
      */
     public function number () {
         if ($this->lookahead->type === FilterLexer::DIGIT) {
@@ -268,12 +266,13 @@ class FilterParser extends Parser {
                 } while ($this->lookahead->type === FilterLexer::DIGIT);
             }
         } else {
-            throw new \Exception("Expecting number : Found $this->lookahead");
+            throw new ParserException("Expecting number, found $this->lookahead");
         }
     }
+
     /**
      * numericoid = number 1*( DOT number )
-     * @throws \Exception
+     * @throws SyntaxException
      */
     public function numericoid () {
         if ($this->lookahead->type === FilterLexer::DIGIT) {
@@ -283,12 +282,13 @@ class FilterParser extends Parser {
                 $this->number();
             }
         } else {
-            throw new \Exception("Expecting numericoid : Found $this->lookahead");
+            throw new ParserException("Expecting numericoid, found $this->lookahead");
         }
     }
 
     /**
-     * @throws \Exception
+     * keychar = ALPHA / DIGIT / HYPHEN
+     * @throws SyntaxException
      */
     public function keychar() {
         switch ($this->lookahead->type) {
@@ -298,20 +298,21 @@ class FilterParser extends Parser {
                 $this->consume();
                 return;
             default:
-                throw new \Exception("Expecting ALPHA / DIGIT / HYPHEN : Found $this->lookahead");
+                throw new ParserException("Expecting ALPHA / DIGIT / HYPHEN, found $this->lookahead");
         }
     }
+
     /**
-     * leadkeychar *keychar
+     * keystring   = leadkeychar *keychar
      * leadkeychar = ALPHA
-     * keychar = ALPHA / DIGIT / HYPHEN
-     * @throws \Exception
+     * keychar     = ALPHA / DIGIT / HYPHEN
+     * @throws SyntaxException
      */
     public function keystring () {
         if ($this->lookahead->type === FilterLexer::ALPHA) {
             $this->match(FilterLexer::ALPHA);
         } else {
-            throw new \Exception("Expecting ALPHA : Found $this->lookahead");
+            throw new ParserException("Expecting ALPHA, found $this->lookahead");
         }
         while (true) {
             switch ($this->lookahead->type) {
@@ -327,14 +328,16 @@ class FilterParser extends Parser {
     }
 
     /**
-     * @throws \Exception
+     * descr = keystring
+     * @throws SyntaxException
      */
     public function descr () {
         $this->keystring();
     }
 
     /**
-     * @throws \Exception
+     * oid = descr / numericoid
+     * @throws SyntaxException
      */
     public function oid() {
         if ($this->lookahead->type === FilterLexer::ALPHA ) {
@@ -342,14 +345,13 @@ class FilterParser extends Parser {
         } else if ($this->lookahead->type === FilterLexer::DIGIT) {
             $this->numericoid();
         } else {
-            throw new \Exception("Expecting descr or numericid: Found $this->lookahead");
+            throw new ParserException("Expecting descr or numericid, found $this->lookahead");
         }
     }
 
-
     /**
-        option = 1*keychar
-     * @throws \Exception
+     * option = 1*keychar
+     * @throws SyntaxException
      */
     public function option() {
         do {
@@ -360,9 +362,10 @@ class FilterParser extends Parser {
             || $this->lookahead->type === FilterLexer::HYPHEN
         );
     }
+
     /**
-        options = *( SEMI option )
-     * @throws \Exception
+     * options = *( SEMI option )
+     * @throws SyntaxException
      */
     public function options() {
         while($this->lookahead->type === FilterLexer::SEMI) {
@@ -373,14 +376,15 @@ class FilterParser extends Parser {
 
     /**
      * attributetype = oid
-     * @throws \Exception
+     * @throws SyntaxException
      */
     public function attributetype() {
         $this->oid();
     }
+
     /**
      * attributedescription = attributetype options
-     * @throws \Exception
+     * @throws SyntaxException
      */
     public function attributedescription() {
         $this->attributetype();
@@ -389,15 +393,16 @@ class FilterParser extends Parser {
 
     /**
      * attr EQUALS [initial] any [final]
-     * @throws \Exception
+     * @throws SyntaxException
      */
     public function substring() {
         $this->attr();
         $this->substringTail();
     }
+
     /**
      * substringTail = EQUALS [initial] any [final]
-     * @throws \Exception
+     * @throws SyntaxException
      */
     public function substringTail() {
         $this->match(FilterLexer::EQUALS);
@@ -407,15 +412,16 @@ class FilterParser extends Parser {
     }
 
     /**
-     * @throws \Exception
+     * initial = assertionvalue
+     * @throws SyntaxException
      */
     public function initial() {
         $this->assertionvalue();
     }
 
     /**
-     * any            = ASTERISK *(assertionvalue ASTERISK)
-     * @throws \Exception
+     * any = ASTERISK *(assertionvalue ASTERISK)
+     * @throws SyntaxException
      */
     public function any() {
         $this->match(FilterLexer::ASTERISK);
@@ -426,22 +432,24 @@ class FilterParser extends Parser {
     }
 
     /**
-     * @throws \Exception
+     * fin = assertionvalue
+     * @throws SyntaxException
      */
     public function fin() { // final can only be used in php 7
         $this->assertionvalue();
     }
 
     /**
-     * @throws \Exception
+     * attr = attributedescription
+     * @throws SyntaxException
      */
     public function attr() {
         $this->attributedescription();
     }
 
     /**
-     * dnattrs        = COLON "dn"
-     * @throws \Exception
+     * dnattrs = COLON "dn"
+     * @throws SyntaxException
      */
     public function dnattrs() {
         $this->match(FilterLexer::COLON);
@@ -452,12 +460,12 @@ class FilterParser extends Parser {
                 return;
             }
         }
-        throw new \Exception("Expecting dnattr: Found $this->lookahead");
+        throw new ParserException("Expecting dnattrs, found $this->lookahead");
     }
 
     /**
-     * matchingrule   = COLON oid
-     * @throws \Exception
+     * matchingrule = COLON oid
+     * @throws SyntaxException
      */
     public function matchingrule() {
         $this->match(FilterLexer::COLON);
@@ -465,15 +473,16 @@ class FilterParser extends Parser {
     }
 
     /**
-     * @throws \Exception
+     * assertionvalue = valueencoding
+     * @throws SyntaxException
      */
     public function assertionvalue() {
         $this->valueencoding();
     }
 
     /**
-     * 0*(normal / escaped)
-     * @throws \Exception
+     * valueencoding = 0*(normal / escaped)
+     * @throws SyntaxException
      */
     public function valueencoding() {
         while (true) {
@@ -490,7 +499,9 @@ class FilterParser extends Parser {
     }
 
     /**
-     * @throws \Exception
+     * normal = UTF1SUBSET / UTFMB
+     * the other Tokens are here because the lexer recognizes them as well, UTF1SUBSET is a "catchall"
+     * @throws SyntaxException
      */
     public function normal() {
         switch ($this->lookahead->type) {
@@ -513,12 +524,13 @@ class FilterParser extends Parser {
                 $this->consume();
                 return;
             default:
-                throw new \Exception("Expecting UTF1SUBSET or UTFMB : Found $this->lookahead");
+                throw new ParserException("Expecting UTF1SUBSET or UTFMB, found $this->lookahead");
         }
     }
 
     /**
-     * @throws \Exception
+     * escaped = ESC HEX HEX
+     * @throws SyntaxException
      */
     public function escaped() {
         $this->match(FilterLexer::ESC);
@@ -527,7 +539,8 @@ class FilterParser extends Parser {
     }
 
     /**
-     * @throws \Exception
+     * HEX = a-z / A-Z / DIGIT
+     * @throws SyntaxException
      */
     public function HEX() {
         if ($this->lookahead->type === FilterLexer::DIGIT) {
@@ -539,7 +552,7 @@ class FilterParser extends Parser {
             ) {
                 $this->consume();
             } else {
-                throw new \Exception("Expecting a-z or A-Z : Found $this->lookahead");
+                throw new ParserException("Expecting a-z or A-Z, found $this->lookahead");
             }
         }
     }

@@ -51,7 +51,6 @@ filters seen in the wild:
 ```
 
 ## TODO
-- [ ] cleanup ... get rid of some experiments, eg. ByteLexer
 - [ ] show snippet of error location
 - [ ] unit Tests
 - [ ] build ast
@@ -59,4 +58,6 @@ filters seen in the wild:
 - [ ] make usable as a lib?
 - [ ] translations? or keep that separate?
 - [ ] composer
+- [ ] support placeholders and giving warnings
+  - %uid, %login, %mail ... preferable freely configurable, a string[]
 - [ ] performance vs eg https://github.com/hoaproject/Compiler

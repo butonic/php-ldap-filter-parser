@@ -9,20 +9,31 @@ abstract class Parser {
     /** @var Token */
     public $lookahead; // the current lookahead token
 
+    /**
+     * Parser constructor.
+     * @param Lexer $lexer
+     * @throws LexerException
+     */
     public function __construct(Lexer $lexer) {
         $this->lexer = $lexer;
         $this->consume();
     }
 
-    /** If lookahead token type matches x, consume & return else error */
-    public function match($x) {
-        if ($this->lookahead->type === $x ) {
+    /** If lookahead token type matches x, consume & return else error
+     * @param $type
+     * @throws SyntaxException
+     */
+    public function match($type) {
+        if ($this->lookahead->type === $type ) {
             $this->consume();
         } else {
-            throw new \Exception("Expecting token " .
-                $x . ":Found " . $this->lookahead);
+            throw new ParserException("Expecting token $type: Found $this->lookahead");
         }
     }
+
+    /**
+     * @throws LexerException
+     */
     public function consume() {
         $this->lookahead = $this->lexer->nextToken();
     }
